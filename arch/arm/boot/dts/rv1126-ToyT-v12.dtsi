@@ -1,0 +1,46 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2020 Rockchip Electronics Co., Ltd.
+ */
+
+#include "rv1126-ToyT-v10.dtsi"
+/ {
+	/delete-node/ vdd-npu;
+	/delete-node/ vdd-vepu;
+
+	vdd_logic: vdd-logic {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_logic";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <810000>;
+		regulator-max-microvolt = <810000>;
+	};
+};
+
+
+&npu {
+	npu-supply = <&vdd_logic_npu_vepu>;
+};
+
+&pwm0 {
+	status = "disabled";
+};
+
+&pwm1 {
+	status = "disabled";
+};
+
+&rkvenc {
+	venc-supply = <&vdd_logic_npu_vepu>;
+};
+
+&rkvenc_opp_table {
+	/*
+	 * max IR-drop values on different freq condition for this board!
+	 */
+	rockchip,board-irdrop = <
+	     /* MHz	MHz	uV */
+		500	594	50000
+	>;
+};

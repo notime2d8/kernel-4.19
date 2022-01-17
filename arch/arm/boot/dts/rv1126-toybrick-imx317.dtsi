@@ -1,0 +1,101 @@
+&csi_dphy0 {
+	status = "okay";
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			mipi_in_ucam0: endpoint@1 {
+				reg = <1>;
+				remote-endpoint = <&ucam_out0>;
+				data-lanes = <1 2 3 4>;
+			};
+		};
+		port@1 {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			csidphy0_out: endpoint@0 {
+				reg = <0>;
+				remote-endpoint = <&isp_in>;
+				data-lanes = <1 2 3 4>;
+			};
+		};
+	};
+};
+
+&rkisp {
+	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+	imx317: imx317@1a {
+		compatible = "sony,imx317";
+		status = "okay";
+		reg = <0x1a>;
+		clocks = <&cru CLK_MIPICSI_OUT>;//chensq
+		clock-names = "xvclk";
+		//power-domains = <&power RV1126_PD_VI>;//chensq
+		/* conflict with csi-ctl-gpios */
+		reset-gpios = <&gpio1 RK_PD4 GPIO_ACTIVE_HIGH>;//chensq
+		//power-gpios = <&gpio4 12 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "rockchip,camera_default";
+		pinctrl-0 = <&mipicsi_clk0>;
+		rockchip,camera-module-index = <1>;
+		rockchip,camera-module-facing = "front";
+		rockchip,camera-module-name = "default";
+		rockchip,camera-module-lens-name = "default";
+		port {
+			ucam_out0: endpoint {
+				remote-endpoint = <&mipi_in_ucam0>;
+				data-lanes = <1 2 3 4>;
+			};
+		};
+	};
+};
+
+&rkisp_vir0 {
+	status = "okay";
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			isp_in: endpoint@0 {
+				reg = <0>;
+				remote-endpoint = <&csidphy0_out>;
+			};
+		};
+		port@1 {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			isp0_out: endpoint@1 {
+				reg = <1>;
+				remote-endpoint = <&ispp0_in>;
+			};
+		};
+	};
+};
+
+&rkispp {
+	status = "okay";
+};
+
+&rkispp_vir0 {
+	status = "okay";
+	port {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		ispp0_in: endpoint@0 {
+			reg = <0>;
+			// isp∂Àport√˚£¨ispp ‰»Î
+			remote-endpoint = <&isp0_out>;
+		};
+	};
+};

@@ -1,0 +1,114 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2020 Rockchip Electronics Co., Ltd.
+ */
+/dts-v1/;
+#include "rv1126.dtsi"
+#include "rv1126-toybrick.dtsi"
+#include "rv1126-toybrick-imx317.dtsi"
+/ {
+	model = "Rockchip RV1126 Toybrick Board";
+	compatible = "rockchip,rv1126-toybrick-linux", "rockchip,rv1126";
+
+	chosen {
+		bootargs = "earlycon=uart8250,mmio32,0xff570000 console=ttyFIQ0 root=PARTUUID=614e0000-0000 rootfstype=ext4 rootwait snd_aloop.index=7";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led@1 {
+			gpios = <&gpio0 RK_PC0 GPIO_ACTIVE_LOW>;
+			label = "blue"; 
+			default-state = "on";
+			linux,default-trigger = "default-on";
+			pinctrl-names = "default";
+			pinctrl-0 = <&work_led>;
+		};
+	};
+};
+
+&pinctrl {
+	leds {
+
+		work_led: work-led {
+			rockchip,pins = <0 RK_PC0 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+};
+
+&rkvenc_opp_table {
+	/*
+	 * max IR-drop values on different freq condition for this board!
+	 */
+	rockchip,board-irdrop = <
+	     /* MHz	MHz	uV */
+		500	594	50000
+	>;
+};
+
+/**
+ * Model: TB-RV1126D
+ * ----------------------------------------------------------------
+ * supply         |  domain  |  net         | source  |  voltage  |
+ *-----------------------------------------------------------------
+ * pmuio0-supply  |  PMUIO0  |  VCC3V3_SYS  | BULK4   |  3.3V     |
+ * pmuio1-supply  |  PMUIO1  |  VCC3V3_SYS  | BULK4   |  3.3V     |
+ * vccio1-supply  |  VCCIO1  |  VCC_1V8     | LDO4    |  1.8V     |
+ * vccio2-supply  |  VCCIO2  |  VCCIO_FLASH | LDO4    |  1.8V     |
+ * vccio3-supply  |  VCCIO3  |  VCC_1V8     | LDO4    |  1.8V     |
+ * vccio4-supply  |  VCCIO4  |  VCC_1V8     | LDO4    |  1.8V     |
+ * vccio5-supply  |  VCCIO5  |  VCC_3V3     | SWOUT2  |  3.3V     |
+ * vccio6-supply  |  VCCIO6  |  VCC_1V8     | LDO4    |  1.8V     |
+ * vccio7-supply  |  VCCIO7  |  VCC_1V8     | LDO4    |  1.8V     |
+ * ---------------------------------------------------------------
+*/
+
+&pmu_io_domains {
+	status = "okay";
+
+	pmuio0-supply = <&vcc3v3_sys>;
+	pmuio1-supply = <&vcc3v3_sys>;
+	vccio1-supply = <&vcc_1v8>;
+	vccio2-supply = <&vccio_sd>;
+	vccio3-supply = <&vcc_1v8>;
+	vccio4-supply = <&vcc_1v8>;
+	vccio5-supply = <&vcc_3v3>;
+	vccio6-supply = <&vcc_3v3>;
+	vccio7-supply = <&vcc_3v3>;
+};
+
+&pwm0 {
+    status = "disabled";
+};
+
+&pwm1 {
+	status = "disabled";
+};
+
+&pwm3 {
+    status = "okay";
+};
+
+&u2phy0 {
+    vup-gpios = <&gpio0 RK_PC1 GPIO_ACTIVE_LOW>;
+};
+
+&reserved_memory  {
+	linux,cma {
+		size = <0x8000000>;
+	};
+};
+
+&wireless_wlan {
+	/*
+	 * V1.0 WIFI_WAKE_HOST is GPIO2_A2
+	 * V1.1 WIFI_WAKE_HOST from GPIO2_A2 to GPIO1_D5
+	 */
+	WIFI,host_wake_irq = <&gpio1 RK_PD5 GPIO_ACTIVE_HIGH>;
+};
+
+&gmac {
+	tx_delay = <0x2e>;
+	rx_delay = <0x20>;
+};

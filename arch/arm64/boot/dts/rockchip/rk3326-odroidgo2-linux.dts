@@ -1,0 +1,12 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2020 Fuzhou Rockchip Electronics Co., Ltd
+ */
+
+#include "rk3326-odroid-go2.dtsi"
+
+/delete-node/ &vcc_wifi;
+
+&sdio {
+	status = "disabled";
+};

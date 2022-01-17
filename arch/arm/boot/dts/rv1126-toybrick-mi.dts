@@ -1,0 +1,130 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2020 Rockchip Electronics Co., Ltd.
+ */
+
+/dts-v1/;
+#include "rv1126.dtsi"
+#include "rv1126-mi.dtsi"
+
+/ {
+	model = "Rockchip RV1126 Board";
+	compatible = "rockchip,rv1126-toybrick-mi", "rockchip,rv1126";
+
+        chosen {
+                bootargs = "earlycon=uart8250,mmio32,0xff570000 console=ttyFIQ0 ubi.mtd=3 root=ubi0:rootfs rootfstype=ubifs snd_aloop.index=7";
+        };
+
+	dummy_codec: dummy-codec {
+		compatible = "rockchip,dummy-codec";
+		#sound-dai-cells = <0>;
+	};
+	lt7911d_i2s: lt7911d_i2s {
+		status = "okay";
+		compatible = "simple-audio-card";
+		simple-audio-card,name = "LT,lt7911d_i2s";
+		simple-audio-card,cpu {
+			sound-dai = <&i2s0_8ch>;
+		};
+		simple-audio-card,codec {
+			sound-dai = <&dummy_codec>;
+			frame-master;
+			bitclock-master; 
+		};
+	};
+	
+	adc-keys {
+		compatible = "adc-keys";
+		io-channels = <&saradc 0>;
+		io-channel-names = "buttons";
+		poll-interval = <100>;
+		keyup-threshold-microvolt = <1800000>;
+		
+		esc-key {
+			label = "esc";
+			linux,code = <KEY_ESC>;
+			press-threshold-microvolt = <0>;    
+		};    
+	};
+	
+	adc2-keys {
+		compatible = "adc-keys";
+		io-channels = <&saradc 0>;
+		io-channel-names = "buttons";
+		poll-interval = <100>;
+		keyup-threshold-microvolt = <1800000>;
+		
+		esc-key {
+			label = "esc";
+			linux,code = <KEY_ESC>;
+			press-threshold-microvolt = <0>;    
+		};    
+	};
+};
+
+&sfc {
+	status = "okay";
+};
+
+&i2c2 {
+	status = "okay";
+};
+
+&gmac {
+	status = "disabled";
+};
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <100000>;
+	pinctrl-0 = <&i2c1_xfer>;
+	lt7911d: lt7911d@2b {
+		compatible = "lontium,lt7911d";
+                reg = <0x2b>;
+                clocks = <&cru CLK_MIPICSI_OUT>;
+                clock-names = "xvclk";
+                power-domains = <&power RV1126_PD_VI>;
+                pinctrl-names = "rockchip,camera_default";
+                pinctrl-0 = <&mipicsi_clk0>;
+		reset-gpios = <&gpio1 RK_PD5 GPIO_ACTIVE_HIGH>;
+                irq-gpios = <&gpio1 RK_PD7 IRQ_TYPE_EDGE_RISING>;
+                port {
+                        bridge_out0: endpoint {
+                                remote-endpoint = <&mipi_in_ucam0>;
+                                data-lanes = <1 2 3 4>;
+                        };
+                };
+	};
+
+};
+
+&csi_dphy0 {
+        status = "okay";
+
+        ports {
+                #address-cells = <1>;
+                #size-cells = <0>;
+                port@0 {
+                        reg = <0>;
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+
+                        mipi_in_ucam0: endpoint@1 {
+                                reg = <1>;
+                                remote-endpoint = <&bridge_out0>;
+                                data-lanes = <1 2 3 4>;
+                        };
+                };
+        };
+};
+
+&i2s0_8ch {
+	status = "okay";
+	#sound-dai-cells = <0>;
+	rockchip,clk-trcm = <1>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2s0m0_sclk_tx
+		     &i2s0m0_lrck_tx
+		     &i2s0m0_sdi0
+		     &i2s0m0_sdo1_sdi3>;
+};

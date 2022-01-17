@@ -1,0 +1,292 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2020 Rockchip Electronics Co., Ltd.
+ */
+/dts-v1/;
+#include "rv1126.dtsi"
+#include "rv1126-ToyT-v13.dtsi"
+/ {
+	model = "Rockchip RV1126 EVB DDR3 V13 Board";
+	compatible = "rockchip,rv1126-toybrick-ToyT01", "rockchip,rv1126";
+
+	chosen {
+		bootargs = "earlycon=uart8250,mmio32,0xff570000 console=ttyFIQ0 root=PARTUUID=614e0000-0000 rootfstype=ext4 rootwait snd_aloop.index=7";
+	};
+	
+	vcc_1v8: vcc-1v8 {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_1v8";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+	};
+	
+	vcc3v3_sys: vcc33sys {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc3v3_sys";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+	};
+
+	vdd_arm: vdd-arm {
+		compatible = "pwm-regulator";
+		pwms = <&pwm0 0 5000 1>;
+		regulator-name = "vdd_arm";
+		regulator-min-microvolt = <720000>;
+		regulator-max-microvolt = <1000000>;
+		regulator-init-microvolt = <825000>;
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-settling-time-up-us = <250>;
+		pwm-supply = <&vcc3v3_sys>;
+		status = "okay";
+	};
+
+	/*
+	 * pwm1 is reserved as voltage adjustment in hardware
+	 * use fixed regulator to avoid voltage adjustment by software
+	 */
+	vdd_logic_npu_vepu: vdd-logic-npu-vepu {
+		compatible = "pwm-regulator";
+		pwms = <&pwm1 0 5000 1>;
+		regulator-name = "vdd_logic_npu_vepu";
+		regulator-min-microvolt = <720000>;
+		regulator-max-microvolt = <880000>;
+		regulator-init-microvolt = <825000>;
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-settling-time-up-us = <250>;
+		pwm-supply = <&vcc3v3_sys>;
+		status = "okay";
+	};
+
+	vdd_logic_npu_vepu_fixed: vdd-logic-npu-vepu-fixed {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_logic_npu_vepu-fixed";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <825000>;
+		regulator-max-microvolt = <825000>;
+	};
+
+	adc-keys {
+		compatible = "adc-keys";
+		io-channels = <&saradc 0>;
+		io-channel-names = "buttons";
+		poll-interval = <100>;
+		keyup-threshold-microvolt = <1800000>;
+
+		esc-key {
+			label = "esc";
+			linux,code = <KEY_ESC>;
+			press-threshold-microvolt = <0>;
+		};
+	};
+	
+	ext_bt_clk: external-bluetooth-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <32768>;
+		clock-output-names = "CLK_BLUETOOLS_32KHZ";
+		#clock-cells = <0>;
+	};
+	
+	sdio_pwrseq: sdio-pwrseq {
+		compatible = "mmc-pwrseq-simple";
+		pinctrl-names = "default";
+		pinctrl-0 = <&wifi_enable_h>;
+
+		/*
+		 * On the module itself this is one of these (depending
+		 * on the actual card populated):
+		 * - SDIO_RESET_L_WL_REG_ON
+		 * - PDN (power down when low)
+		 */
+		reset-gpios = <&gpio1 RK_PC4 GPIO_ACTIVE_LOW>;//GPIO1_C4
+	};
+	
+	wireless-bluetooth {
+		compatible = "bluetooth-platdata";
+		uart_rts_gpios = <&gpio1 RK_PC0 GPIO_ACTIVE_LOW>;
+		pinctrl-names = "default", "rts_gpio";
+		pinctrl-0 = <&uart0_rtsn>;
+		pinctrl-1 = <&uart0_rtsn_gpio>;
+		BT,power_gpio    = <&gpio1 RK_PC6 GPIO_ACTIVE_HIGH>;//GPIO1_C6
+		BT,wake_host_irq = <&gpio1 RK_PC7 GPIO_ACTIVE_HIGH>;//GPIO1_C7
+		status = "okay";
+	};
+
+	wireless_wlan: wireless-wlan {
+		compatible = "wlan-platdata";
+		rockchip,grf = <&grf>;
+		clocks = <&ext_bt_clk>;
+		clock-names = "clk_wifi";
+		pinctrl-names = "default";
+		pinctrl-0 = <&wifi_wake_host>;
+		wifi_chip_type = "ap6256";
+		/* WIFI,poweren_gpio = <&gpio0 RK_PA6 GPIO_ACTIVE_HIGH>; */
+		WIFI,host_wake_irq = <&gpio1 RK_PC5 GPIO_ACTIVE_HIGH>;//GPIO1_C5
+		status = "okay";
+	};
+	
+	ext_cam_clk: external-camera-clock {
+		status = "okay";
+		compatible = "fixed-clock";
+		clock-frequency = <27000000>;
+		clock-output-names = "CLK_CAMERA_27MHZ";
+		#clock-cells = <0>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&work_led>;
+		/**
+		 *led state:
+		 * bule:  system_work_led1
+		 * red:   system_work_led2
+		 * green: system_work_led3
+		 */
+		led@1 {
+			gpios = <&gpio0 RK_PC3 GPIO_ACTIVE_HIGH>;
+			label = "system_work_led1";  // Blue led
+			default-state = "on";
+			linux,default-trigger = "default-on";
+		};
+
+		led@2 {
+			gpios = <&gpio0 RK_PC2 GPIO_ACTIVE_HIGH>;
+			label = "system_work_led2";  // Red led
+			default-state = "on";
+			linux,default-trigger = "default-on";
+		};
+	};
+
+};
+
+&cpu0_opp_table {
+	opp-408000000 {
+		status = "disabled";
+	};
+	opp-600000000 {
+		status = "disabled";
+	};
+	opp-816000000 {
+		status = "disabled";
+	};
+	opp-1008000000 {
+		status = "disabled";
+	};
+	opp-1200000000 {
+		status = "disabled";
+	};
+	opp-1296000000 {
+		status = "disabled";
+	};
+	opp-1416000000 {
+		status = "okay";
+	};
+	opp-1512000000 {
+		status = "disabled";
+	};
+};
+
+/**
+ * Model: TB-ToyT01
+ * ----------------------------------------------------------------
+ * supply         |  domain  |  net         | source  |  voltage  |
+ *-----------------------------------------------------------------
+ * pmuio0-supply  |  PMUIO0  |  VCC_3V3     | VCC_5V  |  3.3V     |
+ * pmuio1-supply  |  PMUIO1  |  VCC_3V3     | VCC_5V  |  3.3V     |
+ * vccio1-supply  |  VCCIO1  |  VCC_1V8     | VCC_5V  |  1.8V     |
+ * vccio2-supply  |  VCCIO2  |  VCC_3V3     | VCC_5V  |  3.3V     |
+ * vccio3-supply  |  VCCIO3  |  VCC_1V8     | VCC_5V  |  1.8V     |
+ * vccio4-supply  |  VCCIO4  |  VCC_1V8     | VCC_5V  |  1.8V     |
+ * vccio5-supply  |  VCCIO5  |  VCC_3V3     | VCC_5V  |  3.3V     |
+ * vccio6-supply  |  VCCIO6  |  VCC_3V3     | VCC_5V  |  3.3V     |
+ * vccio7-supply  |  VCCIO7  |  VCC_3V3     | VCC_5V  |  3.3V     |
+ * ---------------------------------------------------------------
+*/
+&pmu_io_domains {
+	status = "okay";
+
+	pmuio0-supply = <&vcc3v3_sys>;
+	pmuio1-supply = <&vcc3v3_sys>;
+	vccio1-supply = <&vcc_1v8>;
+	vccio2-supply = <&vcc3v3_sys>;
+	vccio3-supply = <&vcc_1v8>;//wifi
+	vccio4-supply = <&vcc_1v8>;//spi
+	vccio5-supply = <&vcc3v3_sys>;
+	vccio6-supply = <&vcc3v3_sys>;
+	vccio7-supply = <&vcc3v3_sys>;
+};
+
+&pwm0 {
+	status = "okay";
+};
+
+&pwm1 {
+	status = "okay";
+};
+
+&pinctrl {
+	sdio-pwrseq {
+		/omit-if-no-ref/
+		wifi_enable_h: wifi-enable-h {
+			rockchip,pins = <1 RK_PC4 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+	wireless-wlan {
+		/omit-if-no-ref/
+		wifi_wake_host: wifi-wake-host {
+			rockchip,pins = <1 RK_PC5 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+	leds {
+
+		work_led: work-led {
+			rockchip,pins =
+				<0 RK_PC3 RK_FUNC_GPIO &pcfg_pull_none>,
+				<0 RK_PC2 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+};
+
+&rkcif_mipi_lvds_sditf {
+	status = "disabled";
+};
+
+&rkisp {
+	status = "disabled";
+};
+
+&rkisp_vir0 {
+	status = "disabled";
+};
+
+&rkisp_mmu {
+	status = "disabled";
+};
+
+&rkispp {
+	status = "disabled";
+};
+
+&rkispp_vir0 {
+	status = "disabled";
+};
+
+&rkispp_mmu {
+	status = "disabled";
+};
+
+&reserved_memory  {
+	linux,cma {
+		size = <0x8000000>;
+	};
+};
